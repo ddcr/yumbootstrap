@@ -52,6 +52,7 @@ o.set_defaults(
   exclude = [],
   groups = [],
   repositories = {},
+  yum_options = {}   # set extra k=v options in the global yum config
 )
 
 def add_pkg_list(option, opt, value, parser, attr):
@@ -172,6 +173,15 @@ o.add_option(
   help = 'use this Yum repository (may be specified multiple times)',
   metavar = 'NAME=URL',
 )
+o.add_option(
+  '--setopt',
+  action = 'callback', type = 'string',
+  callback = add_kv_list, callback_args = ('yum_options',),
+  help = 'set these config options in global yum config'
+         ' (may be specified multiple times)',
+  metavar = 'KEY=OPT'
+)
+
 #o.add_option(
 #  '--download-only', # TODO
 #  action = 'store_const', dest = 'action', const = 'download',
@@ -299,10 +309,18 @@ def do_install(opts, suite_name, target):
     logger.info("using built-in repositories")
     repositories = suite.repositories
 
+  if len(opts.yum_options) > 0:
+    logger.info("using extra global yum config options: %s",
+                ", ".join(sorted(opts.yum_options)))
+    yum_options = opts.yum_options
+  else:
+    yum_options = {}
+
   yum_conf = yumbootstrap.yum.YumConfig(
     chroot = target,
     repos = repositories,
     env = suite.environment,
+    extra_opts = yum_options
   )
 
   write_cached_suite(yum_conf.root_dir, opts.suite_dir, suite_name)

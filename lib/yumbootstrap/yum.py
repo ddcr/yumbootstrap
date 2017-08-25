@@ -24,13 +24,14 @@ def mklist(value):
 #-----------------------------------------------------------------------------
 
 class YumConfig:
-  def __init__(self, chroot, repos = {}, env = None):
+  def __init__(self, chroot, repos = {}, env = None, extra_opts = None):
     self.chroot = os.path.abspath(chroot)
     self.repos = repos.copy() # shallow copy is enough
     self.gpg_keys = os.path.join(self.chroot, 'yumbootstrap/RPM-GPG-KEYS')
     self.pretend_has_keys = False
     #self.multilib = False
     self.env = env
+    self.extra_opts = extra_opts
 
   def add_repository(self, name, url):
     self.repos[name] = url
@@ -80,6 +81,10 @@ class YumConfig:
       'logfile  = /yumbootstrap/log/yum.log\n'
     main += 'gpgcheck = %d\n' % (gpgcheck)
     main += 'reposdir = %s/yumbootstrap/yum.repos.d\n' % (gpgcheck)
+
+    if len(self.extra_opts) > 0:
+      for k, v in self.extra_opts.items():
+        main += '%s = %s\n' % (k, v)
 
     repos = [repo(name, self.repos[name]) for name in sorted(self.repos)]
 
